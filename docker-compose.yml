@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: tesis_postgres
+    environment:
+      POSTGRES_DB: tesis_saas
+      POSTGRES_USER: tesis
+      POSTGRES_PASSWORD: tesis123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  minio:
+    image: minio/minio:latest
+    container_name: tesis_minio
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123456
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
+    volumes:
+      - minio_data:/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: tesis_backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://tesis:tesis123@postgres:5432/tesis_saas
+      BASE_DOMAIN: localtest.me
+      MINIO_ENDPOINT: "minio:9000"
+      MINIO_ACCESS_KEY: "minio"
+      MINIO_SECRET_KEY: "minio123456"
+      MINIO_SECURE: "false"
+      MINIO_BUCKET: "tesis-docs"
+      JWT_SECRET: "cambia-esto-en-produccion"
+    depends_on:
+      - postgres
+      - minio
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: tesis_frontend
+    environment:
+      NEXT_PUBLIC_API_BASE: /api
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+  proxy:
+    image: caddy:2
+    container_name: tesis_proxy
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+    volumes:
+      - ./reverse-proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+
+volumes:
+  pg_data:
+  minio_data:
