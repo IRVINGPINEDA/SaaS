@@ -1,4 +1,4 @@
-# Tesis SaaS Docs (México) — Gestión de Documentación para Prácticas Profesionales y Servicio Social
+SaaS Docs — Gestión de Documentación para Prácticas Profesionales y Servicio Social
 
 Sistema **SaaS multi-tenant** (por subdominio) para gestionar el flujo de **carga, validación y revisión** de documentos de alumnos en **Prácticas Profesionales** y **Servicio Social** en México.
 
@@ -43,6 +43,5 @@ cd tesis-saas-docs
 
 
 docker compose up -d --build
-
 
 docker exec -it tesis_backend python -m app.seed
