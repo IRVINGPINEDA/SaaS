@@ -13,6 +13,9 @@ class DocumentType(Base):
     tenant_id: Mapped[int] = mapped_column(Integer, ForeignKey("tenants.id"), index=True)
     name: Mapped[str] = mapped_column(String(120))
     code: Mapped[str] = mapped_column(String(60), index=True)  # e.g. CARTA_PRESENTACION
+    # Optional scoping of a document type to a program.
+    # None means "legacy/unscoped" (treated as Practicas in the UI by default).
+    program: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)  # PRACTICAS | SERVICIO
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     tenant = relationship("Tenant")

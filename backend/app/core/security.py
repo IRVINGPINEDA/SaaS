@@ -15,8 +15,9 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, password_hash: str) -> bool:
     return pwd_context.verify(password, password_hash)
 
-def create_access_token(payload: dict) -> str:
-    exp = datetime.now(timezone.utc) + timedelta(minutes=JWT_EXPIRES_MIN)
+def create_access_token(payload: dict, expires_minutes: int | None = None) -> str:
+    exp_minutes = JWT_EXPIRES_MIN if expires_minutes is None else expires_minutes
+    exp = datetime.now(timezone.utc) + timedelta(minutes=exp_minutes)
     to_encode = {**payload, "exp": exp}
     return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALG)
 

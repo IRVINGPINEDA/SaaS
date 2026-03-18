@@ -4,6 +4,10 @@ class TenantCreate(BaseModel):
     slug: str
     name: str
 
+class TenantUpdate(BaseModel):
+    name: str | None = None
+    is_active: bool | None = None
+
 class TenantOut(BaseModel):
     id: int
     slug: str

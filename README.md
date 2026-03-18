@@ -21,7 +21,7 @@ Cada institución (escuela/empresa) usa su propio subdominio y puede personaliza
 - **Backend**: FastAPI + SQLAlchemy
 - **DB**: PostgreSQL
 - **Storage**: MinIO (S3 compatible)
-- **Reverse Proxy**: Caddy (manejo de subdominios localtest.me)
+- **Reverse Proxy**: Caddy (manejo de subdominios por `BASE_DOMAIN`)
 - **Infra**: Docker Compose
 
 ---
@@ -45,3 +45,33 @@ cd tesis-saas-docs
 docker compose up -d --build
 
 docker exec -it tesis_backend python -m app.seed
+```
+
+### 2) Abrir el sistema (IMPORTANTE: usar subdominios)
+
+Este proyecto es **multi-tenant por subdominio**. Para que el backend resuelva `tenant_id`, entra por:
+
+- `http://escuela1.<BASE_DOMAIN>` (tenant demo 1)
+- `http://escuela2.<BASE_DOMAIN>` (tenant demo 2)
+- `http://admin.<BASE_DOMAIN>` (portal global SUPER_ADMIN)
+
+Configura `BASE_DOMAIN` segun tu entorno:
+- Local: `BASE_DOMAIN=localtest.me` (no requiere hosts file)
+- Alternativa local: `BASE_DOMAIN=127.0.0.1.sslip.io`
+
+Resumen de seguridad (para presentacion): `SECURITY_RESUMEN.md`.
+
+Evita abrir `http://localhost:3000` o `http://localhost:8000` si quieres que funcionen los portales por rol/tenant.
+
+### 3) Demo de sincronización Alumno ↔ Revisor (documentos reales)
+
+1) Entra a `http://escuela1.<BASE_DOMAIN>`
+   - Alumno: `A001` / `Alumno123!`
+   - En `Documentos` sube un PDF/imagen.
+
+2) Entra a `http://escuela1.<BASE_DOMAIN>` (mismo tenant)
+   - Revisor: `revisor@escuela1.com` / `Admin123!`
+   - Abre `Pendientes / Observados` (ruta: `/reviewer/pending`)
+   - Verás el documento subido por el alumno, podrás **abrirlo** y **aprobar/rechazar/observar**.
+
+Nota: el visor abre el PDF desde el backend con un token temporal (misma origin) para que se muestre dentro del modal.

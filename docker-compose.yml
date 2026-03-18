@@ -30,7 +30,7 @@ services:
     container_name: tesis_backend
     environment:
       DATABASE_URL: postgresql+psycopg://tesis:tesis123@postgres:5432/tesis_saas
-      BASE_DOMAIN: localtest.me
+      BASE_DOMAIN: ${BASE_DOMAIN:-localtest.me}
       MINIO_ENDPOINT: "minio:9000"
       MINIO_ACCESS_KEY: "minio"
       MINIO_SECRET_KEY: "minio123456"
