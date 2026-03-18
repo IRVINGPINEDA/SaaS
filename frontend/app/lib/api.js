@@ -33,3 +33,19 @@ export async function apiGet(path, token) {
   }
   return data;
 }
+
+export async function apiUpload(path, formData, token) {
+  const res = await fetch(`${apiBase()}${path}`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: formData,
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.detail || "Error");
+  }
+  return data;
+}

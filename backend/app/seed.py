@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, text, inspect
 from app.db.session import engine, SessionLocal
 from app.db.base_class import Base
 from app.db.base_class import Base
@@ -7,10 +7,24 @@ import app.db.base  # <-- MUY IMPORTANTE para registrar modelos
 from app.db_models.tenant import Tenant
 from app.db_models.user import User
 from app.core.security import hash_password
-from app.core.config import ROLE_SUPER_ADMIN, ROLE_TENANT_ADMIN, ROLE_REVIEWER, ROLE_STUDENT
+from app.core.config import ROLE_SUPER_ADMIN, ROLE_TENANT_ADMIN, ROLE_REVIEWER, ROLE_STUDENT, BASE_DOMAIN, ADMIN_SUBDOMAIN
 from app.db_models.document import DocumentType
 def main():
     Base.metadata.create_all(bind=engine)
+
+    # Migracion ligera: agregar columna `program` a document_types si no existe.
+    try:
+        cols = {c.get("name") for c in (inspect(engine).get_columns("document_types") or [])}
+        if "program" not in cols:
+            with engine.begin() as conn:
+                conn.execute(text("ALTER TABLE document_types ADD COLUMN program VARCHAR(16)"))
+        with engine.begin() as conn:
+            try:
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_document_types_program ON document_types (program)"))
+            except Exception:
+                pass
+    except Exception:
+        pass
 
     db = SessionLocal()
     try:
@@ -44,16 +58,111 @@ def main():
         
 
         def seed_doc_types(db, tenant_id: int):
-            existing = db.query(DocumentType).filter(DocumentType.tenant_id == tenant_id).count()
-            if existing > 0:
-                return
+        
 
-            db.add_all([
-                DocumentType(tenant_id=tenant_id, name="Carta de Presentación", code="CARTA_PRESENTACION"),
-                DocumentType(tenant_id=tenant_id, name="Reporte Semanal", code="REPORTE_SEMANAL"),
-                DocumentType(tenant_id=tenant_id, name="Evaluación Mensual", code="EVALUACION_MENSUAL"),
-            ])
-            db.commit()
+            # Seed idempotente por codigo.
+        
+
+            presets = [
+        
+
+                # Practicas profesionales (legacy compatibles: los viejos tenants ya usan estos codes)
+        
+
+                {'name': 'Carta de Presentacion', 'code': 'CARTA_PRESENTACION', 'program': 'PRACTICAS'},
+        
+
+                {'name': 'Reporte Semanal', 'code': 'REPORTE_SEMANAL', 'program': 'PRACTICAS'},
+        
+
+                {'name': 'Evaluacion Mensual', 'code': 'EVALUACION_MENSUAL', 'program': 'PRACTICAS'},
+        
+
+        
+        
+
+                # Servicio social
+        
+
+                {'name': 'Carta de Aceptacion (Servicio social)', 'code': 'SERVICIO_CARTA_ACEPTACION', 'program': 'SERVICIO'},
+        
+
+                {'name': 'Plan de Trabajo (Servicio social)', 'code': 'SERVICIO_PLAN_TRABAJO', 'program': 'SERVICIO'},
+        
+
+                {'name': 'Reporte Mensual (Servicio social)', 'code': 'SERVICIO_REPORTE_MENSUAL', 'program': 'SERVICIO'},
+        
+
+                {'name': 'Informe Final (Servicio social)', 'code': 'SERVICIO_INFORME_FINAL', 'program': 'SERVICIO'},
+        
+
+                {'name': 'Constancia de Liberacion (Servicio social)', 'code': 'SERVICIO_CONSTANCIA_LIBERACION', 'program': 'SERVICIO'},
+        
+
+            ]
+        
+
+        
+        
+
+            by_code = {
+        
+
+                (r.code or '').strip().upper(): r
+        
+
+                for r in (db.query(DocumentType).filter(DocumentType.tenant_id == tenant_id).all() or [])
+        
+
+            }
+        
+
+        
+        
+
+            changed = False
+        
+
+            for p in presets:
+        
+
+                code = str(p['code']).strip().upper()
+        
+
+                existing = by_code.get(code)
+        
+
+                if not existing:
+        
+
+                    db.add(DocumentType(tenant_id=tenant_id, name=p['name'], code=code, program=p.get('program')))
+        
+
+                    changed = True
+        
+
+                    continue
+        
+
+        
+        
+
+                if getattr(existing, 'program', None) in (None, '') and p.get('program'):
+        
+
+                    existing.program = p.get('program')
+        
+
+                    changed = True
+        
+
+        
+        
+
+            if changed:
+        
+
+                db.commit()
         seed_doc_types(db, t1.id)
         seed_doc_types(db, t2.id)
         # 3) Usuarios por tenant
@@ -87,11 +196,11 @@ def main():
         ensure_user(t2.id, ROLE_STUDENT, None, "B001", "Alumno B001", "Alumno123!")
 
         print("Seed listo:")
-        print("- SUPER_ADMIN: admin@saas.com / Admin123! (host: admin.localtest.me)")
-        print("- Escuela1 Admin: admin@escuela1.com / Admin123! (host: escuela1.localtest.me)")
-        print("- Escuela1 Alumno: A001 / Alumno123! (host: escuela1.localtest.me)")
-        print("- Escuela2 Admin: admin@escuela2.com / Admin123! (host: escuela2.localtest.me)")
-        print("- Escuela2 Alumno: B001 / Alumno123! (host: escuela2.localtest.me)")
+        print(f"- SUPER_ADMIN: admin@saas.com / Admin123! (host: {ADMIN_SUBDOMAIN}.{BASE_DOMAIN})")
+        print(f"- Escuela1 Admin: admin@escuela1.com / Admin123! (host: escuela1.{BASE_DOMAIN})")
+        print(f"- Escuela1 Alumno: A001 / Alumno123! (host: escuela1.{BASE_DOMAIN})")
+        print(f"- Escuela2 Admin: admin@escuela2.com / Admin123! (host: escuela2.{BASE_DOMAIN})")
+        print(f"- Escuela2 Alumno: B001 / Alumno123! (host: escuela2.{BASE_DOMAIN})")
 
     finally:
         db.close()

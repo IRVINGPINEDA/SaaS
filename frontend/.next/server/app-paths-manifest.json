@@ -1,0 +1,18 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/admin/settings/page": "app/admin/settings/page.js",
+  "/admin/super/panel/page": "app/admin/super/panel/page.js",
+  "/about/page": "app/about/page.js",
+  "/admin/tenants/page": "app/admin/tenants/page.js",
+  "/admin/panel/page": "app/admin/panel/page.js",
+  "/logout/page": "app/logout/page.js",
+  "/contact/page": "app/contact/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/page": "app/page.js",
+  "/review/dashboard/page": "app/review/dashboard/page.js",
+  "/reviewer/pending/page": "app/reviewer/pending/page.js",
+  "/review/panel/page": "app/review/panel/page.js",
+  "/student/dashboard/page": "app/student/dashboard/page.js",
+  "/reviewer/panel/page": "app/reviewer/panel/page.js",
+  "/student/portal/page": "app/student/portal/page.js"
+}
